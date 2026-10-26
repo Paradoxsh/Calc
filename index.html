@@ -3,366 +3,431 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070816">
 <title>Scientific Calculator</title>
+<script>
+  try {
+    var t = localStorage.getItem('sc-theme');
+    t = t ? JSON.parse(t) : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.dataset.theme = t;
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
 <style>
   :root {
-    --bg1: #eef1ff;
-    --bg2: #e6f6f3;
-    --card: rgba(255, 255, 255, 0.82);
-    --card-border: rgba(255, 255, 255, 0.9);
-    --shadow: 0 30px 60px -20px rgba(60, 64, 140, 0.35), 0 8px 20px -8px rgba(30, 30, 80, 0.15);
-    --text: #1b1e3a;
-    --muted: #7b809e;
-    --display-bg: #14172e;
-    --display-text: #f4f5ff;
-    --display-muted: #8e93bd;
+    color-scheme: dark;
+    --bg: #070816;
+    --text: #f2f3ff;
+    --muted: #8e94c4;
+    --glass: rgba(255,255,255,.055);
+    --glass-b: rgba(255,255,255,.11);
+    --shadow: 0 30px 80px -30px rgba(0,0,0,.85);
+    --blob1: #6d28d9; --blob2: #0ea5e9; --blob3: #ec4899; --blob-o: .4;
 
-    --num-bg: #ffffff;
-    --num-text: #1b1e3a;
-    --num-shadow: #d9dcee;
+    --num-bg: rgba(255,255,255,.075); --num-br: rgba(255,255,255,.10);
+    --op-bg: rgba(139,92,246,.20);   --op-t: #d8ccff; --op-br: rgba(167,139,250,.38);
+    --fn-bg: rgba(45,212,191,.11);   --fn-t: #6ee7d6; --fn-br: rgba(45,212,191,.26);
+    --clr-bg: rgba(251,113,133,.16); --clr-t: #ffb4c0; --clr-br: rgba(251,113,133,.34);
+    --mem-bg: rgba(251,191,36,.11);  --mem-t: #fcd34d; --mem-br: rgba(251,191,36,.28);
 
-    --op-bg: #e7e9ff;
-    --op-text: #4338ca;
-    --op-shadow: #c9ccf5;
+    --c-num: #f4f5ff; --c-op: #a78bfa; --c-fn: #5eead4; --c-const: #fbbf24; --c-par: #8e94c4;
 
-    --fn-bg: #dcf3ee;
-    --fn-text: #0f766e;
-    --fn-shadow: #b8e2da;
-
-    --clr-bg: #ffe3e7;
-    --clr-text: #be123c;
-    --clr-shadow: #f7c3cb;
-
-    --eq-from: #6366f1;
-    --eq-to: #8b5cf6;
-    --eq-shadow: #4f46e5;
+    --r: clamp(16px, 2.4vmin, 28px);
+    --kr: clamp(10px, 1.8vmin, 18px);
+    --gap: clamp(5px, 1vmin, 12px);
+    --pad: clamp(8px, 1.8vmin, 22px);
+    --main-fs: clamp(2.6rem, calc(1.4vw + 2.4vh), 4.6rem);
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg1: #0f1124;
-      --bg2: #0d1f26;
-      --card: rgba(28, 31, 58, 0.8);
-      --card-border: rgba(255, 255, 255, 0.07);
-      --shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
-      --text: #eceeff;
-      --muted: #8e93bd;
-      --display-bg: #0a0b18;
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg: #eef0ff;
+    --text: #1c1f3d;
+    --muted: #6b7099;
+    --glass: rgba(255,255,255,.6);
+    --glass-b: rgba(255,255,255,.95);
+    --shadow: 0 25px 60px -25px rgba(70,60,160,.4);
+    --blob1: #a78bfa; --blob2: #7dd3fc; --blob3: #f9a8d4; --blob-o: .65;
 
-      --num-bg: #2a2e55;
-      --num-text: #f1f2ff;
-      --num-shadow: #1a1d3a;
+    --num-bg: rgba(255,255,255,.95); --num-br: rgba(110,110,180,.18);
+    --op-bg: rgba(124,58,237,.12);   --op-t: #5b21b6; --op-br: rgba(124,58,237,.3);
+    --fn-bg: rgba(13,148,136,.10);   --fn-t: #0f766e; --fn-br: rgba(13,148,136,.3);
+    --clr-bg: rgba(225,29,72,.10);   --clr-t: #be123c; --clr-br: rgba(225,29,72,.28);
+    --mem-bg: rgba(217,119,6,.12);   --mem-t: #b45309; --mem-br: rgba(217,119,6,.3);
 
-      --op-bg: #3b3f86;
-      --op-text: #c7caff;
-      --op-shadow: #272a5e;
-
-      --fn-bg: #14463f;
-      --fn-text: #7ff0dc;
-      --fn-shadow: #0d2f2b;
-
-      --clr-bg: #5a1f2e;
-      --clr-text: #ffb3c1;
-      --clr-shadow: #3d1520;
-    }
+    --c-num: #1c1f3d; --c-op: #7c3aed; --c-fn: #0d9488; --c-const: #d97706; --c-par: #8a8fb5;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  html, body { height: 100%; margin: 0; }
-
-  body {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: var(--text);
-    background:
-      radial-gradient(900px 500px at 10% 0%, var(--bg1), transparent 60%),
-      radial-gradient(900px 600px at 100% 100%, var(--bg2), transparent 60%),
-      var(--bg1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overscroll-behavior: none;
   }
 
-  .calc {
-    width: min(100%, 400px);
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 28px;
-    padding: 18px;
+  /* ---------- Animated aurora background ---------- */
+  .bg { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .blob { position: absolute; width: 55vmax; height: 55vmax; border-radius: 50%; filter: blur(90px); opacity: var(--blob-o); }
+  .b1 { background: var(--blob1); top: -20vmax; left: -15vmax; animation: drift1 22s ease-in-out infinite alternate; }
+  .b2 { background: var(--blob2); bottom: -25vmax; right: -15vmax; animation: drift2 26s ease-in-out infinite alternate; }
+  .b3 { background: var(--blob3); top: 30%; left: 45%; width: 35vmax; height: 35vmax; opacity: calc(var(--blob-o) * .7); animation: drift3 30s ease-in-out infinite alternate; }
+  @keyframes drift1 { to { transform: translate(14vmax, 10vmax) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-12vmax, -8vmax) scale(1.2); } }
+  @keyframes drift3 { to { transform: translate(-18vmax, 12vmax) scale(.85); } }
+
+  /* ---------- App layout (fills the whole screen) ---------- */
+  .app {
+    position: relative; z-index: 1;
+    width: 100%; height: 100vh; height: 100dvh;
+    padding: var(--pad);
+    padding-left: max(var(--pad), env(safe-area-inset-left));
+    padding-right: max(var(--pad), env(safe-area-inset-right));
+    padding-bottom: max(var(--pad), env(safe-area-inset-bottom));
+    display: grid; gap: var(--pad);
+    grid-template-columns: minmax(320px, 36%) 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "top top" "disp keys" "hist keys";
+  }
+  .app > * { min-width: 0; min-height: 0; }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-b);
+    border-radius: var(--r);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
     box-shadow: var(--shadow);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
   }
 
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 2px 4px 12px;
+  /* ---------- Top bar ---------- */
+  .top { grid-area: top; display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+    font-weight: 800; font-size: 1.15rem; color: #fff;
+    background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899);
+    box-shadow: 0 8px 24px -8px rgba(168,85,247,.8);
   }
-
-  .title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .brand h1 { margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: .01em; line-height: 1.1; }
+  .brand small { color: var(--muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+  .tools { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center;
+    background: var(--glass); border: 1px solid var(--glass-b); color: var(--text); cursor: pointer;
+    transition: transform .14s cubic-bezier(.34,1.56,.64,1), background .15s;
   }
+  .icon-btn:hover { background: var(--glass-b); transform: translateY(-1px); }
+  .icon-btn:active { transform: scale(.9); }
+  .icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .hist-btn { display: none; }
 
-  .deg-chip {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--fn-text);
-    background: var(--fn-bg);
-    padding: 4px 10px;
-    border-radius: 999px;
-  }
-
+  /* ---------- Display ---------- */
   .display {
-    background: var(--display-bg);
-    color: var(--display-text);
-    border-radius: 20px;
-    padding: 16px 20px 14px;
-    margin-bottom: 16px;
-    min-height: 116px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-end;
-    overflow: hidden;
-    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.45);
+    grid-area: disp; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: clamp(12px, 2.2vmin, 26px);
+    min-height: clamp(150px, 24vh, 300px);
   }
+  .display::before {
+    content: ""; position: absolute; right: -25%; top: -45%; width: 80%; height: 130%;
+    background: radial-gradient(closest-side, rgba(139,92,246,.30), transparent);
+    pointer-events: none;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; min-height: 26px; position: relative; }
+  .chip {
+    font-size: .68rem; font-weight: 700; letter-spacing: .1em; padding: 4px 11px; border-radius: 999px;
+    background: var(--fn-bg); color: var(--fn-t); border: 1px solid var(--fn-br);
+  }
+  .chip.mem { background: var(--mem-bg); color: var(--mem-t); border-color: var(--mem-br); }
+  .chip.sec { background: var(--op-bg); color: var(--op-t); border-color: var(--op-br); }
+  .chip[hidden] { display: none; }
 
+  .readout { position: relative; display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
   .prev {
-    min-height: 1.4em;
-    font-size: 0.95rem;
-    color: var(--display-muted);
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: none;
+    font-size: clamp(.82rem, calc(.6rem + .9vmin), 1.15rem); color: var(--muted);
+    min-height: 1.6em; max-width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;
   }
-  .prev::-webkit-scrollbar { display: none; }
-
+  .prev::-webkit-scrollbar, .main::-webkit-scrollbar { display: none; }
   .main {
-    margin-top: 4px;
-    font-size: 2.4rem;
-    font-weight: 600;
-    line-height: 1.2;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: none;
+    width: 100%; text-align: right; font-size: var(--main-fs); font-weight: 300; line-height: 1.18;
+    letter-spacing: -.02em; white-space: nowrap; overflow-x: auto; scrollbar-width: none;
     font-variant-numeric: tabular-nums;
-    transition: font-size 0.15s ease;
   }
-  .main::-webkit-scrollbar { display: none; }
-  .main.s1 { font-size: 1.9rem; }
-  .main.s2 { font-size: 1.5rem; }
-  .main.error { color: #ff8a9b; }
-
-  .frac {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    vertical-align: middle;
-    line-height: 1.1;
-    font-size: 0.85em;
-    margin-left: 4px;
+  .t-num { color: var(--c-num); }
+  .t-op { color: var(--c-op); margin: 0 .08em; font-weight: 400; }
+  .t-fn { color: var(--c-fn); }
+  .t-const { color: var(--c-const); }
+  .t-par { color: var(--c-par); }
+  .t-err { color: #fb7185; font-weight: 500; }
+  .caret {
+    display: inline-block; width: 3px; height: .85em; margin-left: 3px; vertical-align: -.05em;
+    background: linear-gradient(#a855f7, #6366f1); border-radius: 2px; animation: blink 1.1s steps(1) infinite;
   }
-  .frac .n { padding: 0 6px 2px; border-bottom: 2px solid currentColor; }
-  .frac .d { padding: 2px 6px 0; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; font-size: .8em; margin-left: .15em; }
+  .frac .n { padding: 0 .25em .06em; border-bottom: .07em solid currentColor; }
+  .frac .d { padding: .06em .25em 0; }
 
-  .keys {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+  /* ---------- History ---------- */
+  .history { grid-area: hist; display: flex; flex-direction: column; padding: clamp(10px, 1.6vmin, 18px); }
+  .h-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .h-head h2 { margin: 0; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .link-btn {
+    background: none; border: 0; color: var(--op-t); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer;
+    padding: 4px 8px; border-radius: 8px;
+  }
+  .link-btn:hover { background: var(--op-bg); }
+  .h-close { display: none; }
+  .h-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; scrollbar-width: thin; }
+  .h-empty { color: var(--muted); font-size: .85rem; text-align: center; margin: auto; padding: 20px; }
+  .h-item {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 2px; width: 100%;
+    background: var(--num-bg); border: 1px solid var(--num-br); border-radius: 12px; padding: 8px 12px;
+    color: var(--text); font: inherit; cursor: pointer; text-align: right;
+    transition: transform .12s ease, background .15s;
+  }
+  .h-item:hover { background: var(--op-bg); transform: translateX(-2px); }
+  .h-item:active { transform: scale(.98); }
+  .h-e { font-size: .8rem; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .h-r { font-size: 1.2rem; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Keypad ---------- */
+  .keypad {
+    grid-area: keys; display: grid; grid-template-columns: 5fr 4fr; gap: calc(var(--gap) * 2.2);
+    padding: calc(var(--gap) * 1.6);
+  }
+  .grid { display: grid; gap: var(--gap); grid-template-rows: repeat(5, minmax(0, 1fr)); min-height: 0; }
+  .sci { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .mainpad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  .key {
+    --kb: var(--num-bg); --kt: var(--text); --kbr: var(--num-br);
+    position: relative; overflow: hidden; width: 100%; height: 100%; min-height: 0; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--kbr); border-radius: var(--kr);
+    background: var(--kb); color: var(--kt);
+    font: inherit; font-weight: 600; font-size: var(--kfs); cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 18px -12px rgba(0,0,0,.6);
+    transition: transform .16s cubic-bezier(.34,1.56,.64,1), filter .15s, box-shadow .2s, background .2s;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  }
+  .key::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.12), transparent 55%); }
+  .key:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .key:active, .key.pressed { transform: scale(.92); filter: brightness(1.35); }
+  .key:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+
+  .sci .key { --kfs: clamp(.8rem, calc(.55rem + 1.1vmin + .5vw), 1.45rem); }
+  .mainpad .key { --kfs: clamp(1.1rem, calc(.7rem + 2.1vmin + .5vw), 2.2rem); }
+
+  .k-op  { --kb: var(--op-bg);  --kt: var(--op-t);  --kbr: var(--op-br); }
+  .k-fn  { --kb: var(--fn-bg);  --kt: var(--fn-t);  --kbr: var(--fn-br); }
+  .k-clr { --kb: var(--clr-bg); --kt: var(--clr-t); --kbr: var(--clr-br); }
+  .k-mem { --kb: var(--mem-bg); --kt: var(--mem-t); --kbr: var(--mem-br); }
+  .k-tog { --kb: var(--op-bg);  --kt: var(--op-t);  --kbr: var(--op-br); }
+  .k-op { font-size: calc(var(--kfs) * 1.2); font-weight: 500; }
+  .k-tog.on { background: linear-gradient(135deg, #2dd4bf, #38bdf8); color: #032a2a; border-color: transparent; box-shadow: 0 8px 22px -8px rgba(45,212,191,.8); }
+  .k-eq {
+    background: linear-gradient(135deg, #6366f1, #a855f7 55%, #ec4899); color: #fff; border-color: transparent;
+    font-size: calc(var(--kfs) * 1.25);
+    box-shadow: 0 12px 30px -10px rgba(168,85,247,.85), inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .k-eq:hover { filter: brightness(1.12); box-shadow: 0 14px 38px -8px rgba(168,85,247,1), inset 0 1px 0 rgba(255,255,255,.3); }
+
+  .has-alt .l2 { display: none; }
+  .second .has-alt .l1 { display: none; }
+  .second .has-alt .l2 { display: inline; }
+  .second .has-alt { --kb: var(--op-bg); --kt: var(--op-t); --kbr: var(--op-br); }
+
+  .ripple {
+    position: absolute; border-radius: 50%; background: rgba(255,255,255,.4); pointer-events: none;
+    transform: scale(0); animation: rip .55s ease-out forwards;
+  }
+  @keyframes rip { to { transform: scale(2.6); opacity: 0; } }
+
+  .toast {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); z-index: 60;
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    padding: 10px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600;
+    background: rgba(20,22,48,.92); color: #fff; border: 1px solid rgba(255,255,255,.15);
+    transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .scrim { display: none; }
+
+  /* ---------- Phone portrait ---------- */
+  @media (max-width: 899px) and (orientation: portrait) {
+    :root { --main-fs: clamp(2.4rem, 12vw, 4rem); --pad: clamp(8px, 2.4vw, 14px); }
+    .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(120px, 24dvh) 1fr; grid-template-areas: "top" "disp" "keys"; gap: 8px; }
+    .display { min-height: 0; }
+    .keypad { grid-template-columns: 1fr; grid-template-rows: 5fr 5.6fr; gap: calc(var(--gap) * 1.6); padding: var(--gap); }
+    .sci .key { --kfs: clamp(.8rem, 3.6vw, 1.15rem); }
+    .mainpad .key { --kfs: clamp(1.2rem, 6vw, 1.8rem); }
   }
 
-  button {
-    font: inherit;
-    border: 0;
-    cursor: pointer;
-    height: 56px;
-    border-radius: 16px;
-    font-size: 1.2rem;
-    font-weight: 600;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
+  /* ---------- Phone landscape / small tablets ---------- */
+  @media (max-width: 899px) and (orientation: landscape) {
+    :root { --main-fs: clamp(1.8rem, 9vh, 3rem); --pad: clamp(6px, 1.6vh, 12px); }
+    .app { grid-template-columns: minmax(180px, 32%) 1fr; grid-template-rows: auto 1fr; grid-template-areas: "top top" "disp keys"; gap: 8px; }
+    .display { min-height: 0; }
+    .brand small { display: none; }
+    .logo { width: 30px; height: 30px; font-size: .95rem; }
+    .icon-btn { width: 34px; height: 34px; border-radius: 10px; }
+    .sci .key { --kfs: clamp(.7rem, 3.4vh, 1.1rem); }
+    .mainpad .key { --kfs: clamp(1rem, 5.4vh, 1.6rem); }
+    .keypad { gap: var(--gap); padding: calc(var(--gap) * .8); }
   }
 
-  button:hover { transform: translateY(-1px); filter: brightness(1.04); }
-  button:active, button.pressed { transform: scale(0.92); filter: brightness(0.96); }
-  button:focus-visible { outline: 3px solid #6366f1; outline-offset: 2px; }
-
-  .num { background: var(--num-bg); color: var(--num-text); box-shadow: 0 3px 0 var(--num-shadow); }
-  .op  { background: var(--op-bg);  color: var(--op-text);  box-shadow: 0 3px 0 var(--op-shadow); font-size: 1.35rem; }
-  .fn  { background: var(--fn-bg);  color: var(--fn-text);  box-shadow: 0 3px 0 var(--fn-shadow); font-size: 1rem; }
-  .clr { background: var(--clr-bg); color: var(--clr-text); box-shadow: 0 3px 0 var(--clr-shadow); }
-  .eq  {
-    background: linear-gradient(135deg, var(--eq-from), var(--eq-to));
-    color: #fff;
-    box-shadow: 0 3px 0 var(--eq-shadow);
-    font-size: 1.5rem;
-  }
-
-  button:active, button.pressed { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1); }
-
-  .span2 { grid-column: span 2; }
-
-  .legend {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-top: 14px;
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-  .legend span::before {
-    content: "";
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    margin-right: 5px;
-    background: var(--c);
-  }
-
-  @media (max-width: 360px) {
-    .calc { padding: 12px; border-radius: 22px; }
-    .keys { gap: 8px; }
-    button { height: 50px; font-size: 1.05rem; }
-    .main { font-size: 2rem; }
+  /* ---------- History as a slide-up drawer on small screens ---------- */
+  @media (max-width: 899px) {
+    .hist-btn { display: grid; }
+    .history {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-height: 72dvh; min-height: 40dvh;
+      border-radius: var(--r) var(--r) 0 0; transform: translateY(105%); transition: transform .3s cubic-bezier(.3,.9,.3,1);
+      background: var(--bg); padding-bottom: max(14px, env(safe-area-inset-bottom));
+    }
+    .history.open { transform: none; }
+    .h-close { display: inline-block; }
+    .scrim { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .25s; }
+    .scrim.show { opacity: 1; pointer-events: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    button, .main { transition: none; }
-    button:hover { transform: none; }
+    .blob, .caret { animation: none; }
+    .key, .icon-btn, .h-item { transition: none; }
+    .ripple { display: none; }
   }
 </style>
 </head>
 <body>
-  <main class="calc" aria-label="Scientific calculator">
-    <div class="header">
-      <div class="title">Scientific Calculator</div>
-      <div class="deg-chip" title="Trigonometry uses degrees">DEG</div>
-    </div>
+  <div class="bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 
-    <section class="display" aria-live="polite">
-      <div class="prev" id="prev"></div>
-      <div class="main" id="main">0</div>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">∑</div>
+        <div><h1>Scientific Calculator</h1><small>Year 9 Maths &amp; Science</small></div>
+      </div>
+      <div class="tools">
+        <button class="icon-btn hist-btn" id="btnHist" type="button" aria-label="Show history" title="History">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+        </button>
+        <button class="icon-btn" id="btnCopy" type="button" aria-label="Copy result" title="Copy result">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+        </button>
+        <button class="icon-btn" id="btnTheme" type="button" aria-label="Switch light or dark theme" title="Theme">
+          <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="display glass" aria-live="polite" aria-label="Display">
+      <div class="chips">
+        <span class="chip" id="chipAngle">DEG</span>
+        <span class="chip sec" id="chip2nd" hidden>2nd</span>
+        <span class="chip mem" id="chipMem" hidden>M</span>
+      </div>
+      <div class="readout">
+        <div class="prev" id="prev"></div>
+        <div class="main" id="main"></div>
+      </div>
     </section>
 
-    <div class="keys" id="keys">
-      <!-- Scientific block -->
-      <button class="fn" data-a="fn" data-v="sin(" aria-label="Sine">sin</button>
-      <button class="fn" data-a="fn" data-v="cos(" aria-label="Cosine">cos</button>
-      <button class="fn" data-a="fn" data-v="tan(" aria-label="Tangent">tan</button>
-      <button class="fn" data-a="pi" aria-label="Pi">π</button>
+    <aside class="history glass" id="history" aria-label="History">
+      <div class="h-head">
+        <h2>History</h2>
+        <div>
+          <button class="link-btn" id="btnClearHist" type="button">Clear</button>
+          <button class="link-btn h-close" id="btnCloseHist" type="button">Close</button>
+        </div>
+      </div>
+      <div class="h-list" id="hList"></div>
+    </aside>
 
-      <button class="fn" data-a="sq" aria-label="Square">x²</button>
-      <button class="fn" data-a="pow" aria-label="Power">xʸ</button>
-      <button class="fn" data-a="fn" data-v="√(" aria-label="Square root">√</button>
-      <button class="fn" data-a="inv" aria-label="Reciprocal">1/x</button>
+    <section class="keypad glass" id="pad" aria-label="Calculator keys">
+      <div class="grid sci" id="sci"></div>
+      <div class="grid mainpad" id="mainpad"></div>
+    </section>
+  </div>
 
-      <button class="fn" data-a="open" aria-label="Open bracket">(</button>
-      <button class="fn" data-a="close" aria-label="Close bracket">)</button>
-      <button class="fn" data-a="pct" aria-label="Percent">%</button>
-      <button class="fn" data-a="frac" aria-label="Show as fraction">a/b</button>
-
-      <!-- Clear row -->
-      <button class="clr span2" data-a="ac" aria-label="All clear">AC</button>
-      <button class="clr span2" data-a="del" aria-label="Backspace">⌫</button>
-
-      <!-- Number pad -->
-      <button class="num" data-a="in" data-v="7">7</button>
-      <button class="num" data-a="in" data-v="8">8</button>
-      <button class="num" data-a="in" data-v="9">9</button>
-      <button class="op" data-a="op" data-v="÷" aria-label="Divide">÷</button>
-
-      <button class="num" data-a="in" data-v="4">4</button>
-      <button class="num" data-a="in" data-v="5">5</button>
-      <button class="num" data-a="in" data-v="6">6</button>
-      <button class="op" data-a="op" data-v="×" aria-label="Multiply">×</button>
-
-      <button class="num" data-a="in" data-v="1">1</button>
-      <button class="num" data-a="in" data-v="2">2</button>
-      <button class="num" data-a="in" data-v="3">3</button>
-      <button class="op" data-a="op" data-v="−" aria-label="Subtract">−</button>
-
-      <button class="num" data-a="in" data-v="0">0</button>
-      <button class="num" data-a="in" data-v=".">.</button>
-      <button class="eq" data-a="eq" aria-label="Equals">=</button>
-      <button class="op" data-a="op" data-v="+" aria-label="Add">+</button>
-    </div>
-
-    <div class="legend">
-      <span style="--c:#6366f1">Operators</span>
-      <span style="--c:#14b8a6">Science</span>
-      <span style="--c:#f43f5e">Clear</span>
-    </div>
-  </main>
+  <div class="scrim" id="scrim"></div>
+  <div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
   'use strict';
+  const $ = s => document.querySelector(s);
+  const mainEl = $('#main'), prevEl = $('#prev'), pad = $('#pad');
+  const chipAngle = $('#chipAngle'), chip2nd = $('#chip2nd'), chipMem = $('#chipMem');
+  const hList = $('#hList'), historyEl = $('#history'), scrim = $('#scrim'), toastEl = $('#toast');
 
-  const mainEl = document.getElementById('main');
-  const prevEl = document.getElementById('prev');
+  /* ================= Storage (safe) ================= */
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
 
-  let expr = '';        // what the student has typed (or the last result)
-  let prev = '';        // small line above the main display
-  let ans = null;       // last numeric answer
-  let done = false;     // true right after "=" (or 1/x)
-  let err = false;      // true while "Error" is showing
-  let fracHTML = '';    // set while a fraction is being displayed
+  /* ================= State ================= */
+  let expr = '', prev = '', ans = null;
+  let done = false, err = false, errMsg = '', fracHTML = '';
+  let mode = 'DEG', second = false;
+  let memory = store.get('sc-mem', 0);
+  let history = store.get('sc-history', []);
 
-  /* ---------------- Number helpers ---------------- */
-
-  // Cleans up floating-point noise (0.1 + 0.2 -> 0.3) and formats nicely.
+  /* ================= Number helpers ================= */
+  const round = x => parseFloat(x.toPrecision(12));       // removes floating-point noise
   function fmt(x) {
     if (!Number.isFinite(x)) throw new Error('range');
-    let r = parseFloat(x.toPrecision(12));
+    const r = round(x);
     if (r === 0) return '0';
     const a = Math.abs(r);
-    if (a >= 1e15 || a < 1e-9) return r.toExponential().replace('e+', 'e');
-    return String(r);
+    let s = (a >= 1e15 || a < 1e-9) ? r.toExponential() : String(r);
+    s = s.replace('e+', 'e');
+    return s[0] === '-' ? '−' + s.slice(1) : s;           // use the same minus the keypad uses
   }
+  const toNum = s => parseFloat(String(s).replace('−', '-'));
 
-  // Trigonometry in DEGREES, with exact values at multiples of 90°.
-  function quadrant(d) {
-    let n = d % 360;
-    if (n < 0) n += 360;
+  /* ================= Trigonometry (DEG or RAD) ================= */
+  const D2R = Math.PI / 180;
+  function quadrant(d) {                                   // exact values at multiples of 90°
+    let n = d % 360; if (n < 0) n += 360;
     const q = n / 90;
     return Math.abs(q - Math.round(q)) < 1e-12 ? Math.round(q) % 4 : null;
   }
-  const rad = d => d * Math.PI / 180;
-  const sinDeg = d => { const k = quadrant(d); return k !== null ? [0, 1, 0, -1][k] : Math.sin(rad(d)); };
-  const cosDeg = d => { const k = quadrant(d); return k !== null ? [1, 0, -1, 0][k] : Math.cos(rad(d)); };
-  const tanDeg = d => {
-    const k = quadrant(d);
-    if (k !== null) {
-      if (k % 2 === 1) throw new Error('tan undefined');
-      return 0;
-    }
-    return Math.tan(rad(d));
+  const toDeg = v => mode === 'DEG' ? v : v * 180 / Math.PI;
+  const toRad = v => mode === 'DEG' ? v * D2R : v;
+  const fromRad = r => mode === 'DEG' ? r / D2R : r;
+  const sinA = v => { const k = quadrant(toDeg(v)); return k !== null ? [0, 1, 0, -1][k] : Math.sin(toRad(v)); };
+  const cosA = v => { const k = quadrant(toDeg(v)); return k !== null ? [1, 0, -1, 0][k] : Math.cos(toRad(v)); };
+  const tanA = v => {
+    const k = quadrant(toDeg(v));
+    if (k !== null) { if (k % 2 === 1) throw new Error('tan undefined'); return 0; }
+    return Math.tan(toRad(v));
   };
 
-  // Continued fractions: turn a decimal into the simplest nearby fraction.
-  function toFraction(x) {
-    const neg = x < 0;
-    const target = Math.abs(x);
+  function factorial(n) {
+    if (Math.abs(n - Math.round(n)) > 1e-9) throw new Error('factorial');
+    n = Math.round(n);
+    if (n < 0 || n > 170) throw new Error('factorial');
+    let r = 1; for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+  function nthRoot(n, x) {
+    if (n === 0) throw new Error('domain');
+    if (x < 0) {
+      if (Number.isInteger(n) && Math.abs(n) % 2 === 1) return -Math.pow(-x, 1 / n);
+      throw new Error('sqrt of negative');
+    }
+    return Math.pow(x, 1 / n);
+  }
+
+  function toFraction(x) {                                 // continued fractions
+    const neg = x < 0, target = Math.abs(x);
     if (Number.isInteger(target)) return { n: target, d: 1, neg };
     let h0 = 0, h1 = 1, k0 = 1, k1 = 0, b = target;
     for (let i = 0; i < 40; i++) {
       const a = Math.floor(b);
-      const h = a * h1 + h0;
-      const k = a * k1 + k0;
+      const h = a * h1 + h0, k = a * k1 + k0;
       if (k > 10000) break;
       h0 = h1; h1 = h; k0 = k1; k1 = k;
       if (Math.abs(target - h1 / k1) < 1e-9 * Math.max(1, target)) break;
@@ -374,39 +439,48 @@
     return { n: h1, d: k1, neg };
   }
 
-  /* ---------------- Safe expression parser (no eval) ---------------- */
+  /* ================= Safe parser (no eval) ================= */
+  const FN_TOKENS = [
+    ['sin⁻¹', 'asin'], ['cos⁻¹', 'acos'], ['tan⁻¹', 'atan'],
+    ['sin', 'sin'], ['cos', 'cos'], ['tan', 'tan'],
+    ['ln', 'ln'], ['log', 'log'], ['abs', 'abs']
+  ];
 
   function tokenize(s) {
     const t = [];
     const numRe = /(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/y;
+    const valueBefore = () => { const k = t[t.length - 1]; return !!k && (k.t === 'num' || k.t === ')' || k.t === 'pct' || k.t === 'fact'); };
     let i = 0;
     while (i < s.length) {
       const c = s[i];
       if (/[\d.]/.test(c)) {
         numRe.lastIndex = i;
         const m = numRe.exec(s);
-        if (!m) throw new Error('bad number');
+        if (!m) throw new Error('syntax');
         i += m[0].length;
-        if (s[i] === '.') throw new Error('bad number');
+        if (s[i] === '.') throw new Error('syntax');
         t.push({ t: 'num', v: parseFloat(m[0]) });
         continue;
       }
       if (c === 'π') { t.push({ t: 'num', v: Math.PI }); i++; continue; }
+      if (c === 'ℯ') { t.push({ t: 'num', v: Math.E }); i++; continue; }
+      if (s.startsWith('Ans', i)) { t.push({ t: 'num', v: ans === null ? 0 : ans }); i += 3; continue; }
+      if (s.startsWith('mod', i)) { t.push({ t: 'op', v: 'mod' }); i += 3; continue; }
       if ('+−×÷^'.includes(c)) { t.push({ t: 'op', v: c }); i++; continue; }
       if (c === '%') { t.push({ t: 'pct' }); i++; continue; }
+      if (c === '!') { t.push({ t: 'fact' }); i++; continue; }
       if (c === '(' || c === ')') { t.push({ t: c }); i++; continue; }
-      const f = ['sin', 'cos', 'tan'].find(n => s.startsWith(n + '(', i));
-      if (f) { t.push({ t: 'fn', v: f }); i += f.length; continue; }
-      if (c === '√') { t.push({ t: 'fn', v: 'sqrt' }); i++; continue; }
-      throw new Error('bad character');
+      const f = FN_TOKENS.find(([n]) => s.startsWith(n + '(', i));
+      if (f) { t.push({ t: 'fn', v: f[1] }); i += f[0].length; continue; }
+      if (c === '∛') { t.push({ t: 'fn', v: 'cbrt' }); i++; continue; }
+      if (c === '√') { t.push(valueBefore() ? { t: 'op', v: 'root' } : { t: 'fn', v: 'sqrt' }); i++; continue; }
+      throw new Error('syntax');
     }
     return t;
   }
 
   function evaluate(src) {
     const tk = tokenize(src);
-
-    // Brackets must be balanced
     let depth = 0;
     for (const k of tk) {
       if (k.t === '(') depth++;
@@ -418,135 +492,217 @@
     let p = 0;
     const peek = () => tk[p];
     const next = () => tk[p++];
-    const expect = type => {
-      const k = next();
-      if (!k || k.t !== type) throw new Error('syntax');
-    };
+    const expect = type => { const k = next(); if (!k || k.t !== type) throw new Error('syntax'); };
 
     function parseExpr() {
       let v = parseTerm();
       while (peek() && peek().t === 'op' && (peek().v === '+' || peek().v === '−')) {
-        const o = next().v;
-        const start = p;
+        const o = next().v, start = p;
         let r = parseTerm();
-        // "200 + 10%" means 200 + 10% of 200
-        if (p - start === 2 && tk[start].t === 'num' && tk[start + 1].t === 'pct') {
-          r = v * tk[start].v / 100;
-        }
+        if (p - start === 2 && tk[start].t === 'num' && tk[start + 1].t === 'pct') r = v * tk[start].v / 100; // 200 + 10% = 220
         v = o === '+' ? v + r : v - r;
       }
       return v;
     }
-
     function parseTerm() {
       let v = parseUnary();
       for (;;) {
         const k = peek();
         if (!k) break;
-        if (k.t === 'op' && (k.v === '×' || k.v === '÷')) {
+        if (k.t === 'op' && (k.v === '×' || k.v === '÷' || k.v === 'mod')) {
           next();
           const r = parseUnary();
-          if (k.v === '÷') {
+          if (k.v === '×') v *= r;
+          else {
             if (r === 0) throw new Error('divide by zero');
-            v /= r;
-          } else {
-            v *= r;
+            v = k.v === '÷' ? v / r : v - r * Math.floor(v / r);
           }
         } else if (k.t === 'num' || k.t === 'fn' || k.t === '(') {
-          v *= parseUnary(); // implicit multiplication: 2π, 3(4+1)
+          v *= parseUnary();                               // implicit multiplication: 2π, 3(4+1)
         } else break;
       }
       return v;
     }
-
     function parseUnary() {
       const k = peek();
       if (k && k.t === 'op' && k.v === '−') { next(); return -parseUnary(); }
       if (k && k.t === 'op' && k.v === '+') { next(); return parseUnary(); }
       return parsePower();
     }
-
     function parsePower() {
       const base = parsePostfix();
       const k = peek();
       if (k && k.t === 'op' && k.v === '^') {
         next();
-        const exp = parseUnary(); // right-associative
-        const r = Math.pow(base, exp);
-        if (!Number.isFinite(r)) throw new Error('math error');
+        const r = Math.pow(base, parseUnary());
+        if (!Number.isFinite(r)) throw new Error('domain');
         return r;
+      }
+      if (k && k.t === 'op' && k.v === 'root') {           // 3√27 = cube root of 27
+        next();
+        return nthRoot(base, parseUnary());
       }
       return base;
     }
-
     function parsePostfix() {
       let v = parsePrimary();
-      while (peek() && peek().t === 'pct') { next(); v /= 100; }
+      for (;;) {
+        const k = peek();
+        if (k && k.t === 'pct') { next(); v /= 100; }
+        else if (k && k.t === 'fact') { next(); v = factorial(v); }
+        else break;
+      }
       return v;
     }
-
     function parsePrimary() {
       const k = next();
       if (!k) throw new Error('syntax');
       if (k.t === 'num') return k.v;
-      if (k.t === '(') {
-        const v = parseExpr();
-        expect(')');
-        return v;
-      }
+      if (k.t === '(') { const v = parseExpr(); expect(')'); return v; }
       if (k.t === 'fn') {
         expect('(');
         const v = parseExpr();
         expect(')');
         switch (k.v) {
-          case 'sin': return sinDeg(v);
-          case 'cos': return cosDeg(v);
-          case 'tan': return tanDeg(v);
-          case 'sqrt':
-            if (v < 0) throw new Error('sqrt of negative');
-            return Math.sqrt(v);
+          case 'sin': return sinA(v);
+          case 'cos': return cosA(v);
+          case 'tan': return tanA(v);
+          case 'asin': if (Math.abs(v) > 1) throw new Error('domain'); return fromRad(Math.asin(v));
+          case 'acos': if (Math.abs(v) > 1) throw new Error('domain'); return fromRad(Math.acos(v));
+          case 'atan': return fromRad(Math.atan(v));
+          case 'ln':   if (v <= 0) throw new Error('domain'); return Math.log(v);
+          case 'log':  if (v <= 0) throw new Error('domain'); return Math.log10(v);
+          case 'abs':  return Math.abs(v);
+          case 'sqrt': if (v < 0) throw new Error('sqrt of negative'); return Math.sqrt(v);
+          case 'cbrt': return Math.cbrt(v);
         }
       }
       throw new Error('syntax');
     }
 
-    if (tk.length === 0) throw new Error('empty');
+    if (tk.length === 0) throw new Error('syntax');
     const result = parseExpr();
     if (p !== tk.length) throw new Error('syntax');
-    if (!Number.isFinite(result)) throw new Error('range');
+    if (!Number.isFinite(result)) throw new Error('domain');
     return result;
   }
 
-  /* ---------------- State + UI ---------------- */
-
-  function reset() {
-    expr = ''; prev = ''; ans = null; done = false; err = false; fracHTML = '';
-  }
-
-  function setError() {
-    err = true;
-    prev = expr;
-    expr = '';
-    done = false;
-    fracHTML = '';
-  }
-
-  // Called before adding input. isOp = the key continues from the last answer.
-  function start(isOp) {
-    fracHTML = '';
-    if (done) {
-      if (!isOp) expr = '';
-      prev = '';
-      done = false;
+  function reason(e) {
+    switch (e && e.message) {
+      case 'divide by zero': return "You can't divide by zero";
+      case 'brackets': return "The brackets don't match";
+      case 'sqrt of negative': return "Can't take an even root of a negative number";
+      case 'tan undefined': return 'tan is undefined at this angle';
+      case 'domain': return 'That number is outside what this function allows';
+      case 'factorial': return 'Factorial needs a whole number from 0 to 170';
+      default: return 'Check the expression and try again';
     }
   }
 
-  const VALUE_END = /[\d.π)%]$/;
+  /* ================= Key layout ================= */
+  const SCI = [
+    { l: '2nd', a: 'second', c: 'tog', id: 'k-second', aria: 'Second function' },
+    { l: 'DEG', a: 'angle', c: 'tog', id: 'k-angle', aria: 'Switch degrees and radians' },
+    { l: '(', a: 'open', c: 'fn', aria: 'Open bracket' },
+    { l: ')', a: 'close', c: 'fn', aria: 'Close bracket' },
+    { l: '%', a: 'post', v: '%', c: 'fn', aria: 'Percent' },
+
+    { l: 'sin', l2: 'sin⁻¹', a: 'fn', v: 'sin(', av: 'sin⁻¹(', c: 'fn' },
+    { l: 'cos', l2: 'cos⁻¹', a: 'fn', v: 'cos(', av: 'cos⁻¹(', c: 'fn' },
+    { l: 'tan', l2: 'tan⁻¹', a: 'fn', v: 'tan(', av: 'tan⁻¹(', c: 'fn' },
+    { l: 'π', a: 'const', v: 'π', c: 'fn', aria: 'Pi' },
+    { l: 'e', a: 'const', v: 'ℯ', c: 'fn', aria: "Euler's number" },
+
+    { l: 'ln', l2: 'eˣ', a: 'fn', v: 'ln(', av: 'ℯ^(', c: 'fn' },
+    { l: 'log', l2: '10ˣ', a: 'fn', v: 'log(', av: '10^(', c: 'fn' },
+    { l: '√', l2: '∛', a: 'rootfn', v: '√(', av: '∛(', c: 'fn', aria: 'Square root' },
+    { l: 'x²', l2: 'x³', a: 'post', v: '^2', av: '^3', c: 'fn', aria: 'Square' },
+    { l: 'xʸ', l2: 'ʸ√x', a: 'post', v: '^', av: '√', c: 'fn', aria: 'Power' },
+
+    { l: '1/x', a: 'inv', c: 'fn', aria: 'Reciprocal' },
+    { l: 'n!', a: 'post', v: '!', c: 'fn', aria: 'Factorial' },
+    { l: '|x|', a: 'fn', v: 'abs(', c: 'fn', aria: 'Absolute value' },
+    { l: 'mod', a: 'op', v: 'mod', c: 'fn', aria: 'Modulo (remainder)' },
+    { l: 'a/b', a: 'frac', c: 'fn', aria: 'Show as fraction' },
+
+    { l: 'MC', a: 'mc', c: 'mem', aria: 'Memory clear' },
+    { l: 'MR', a: 'mr', c: 'mem', aria: 'Memory recall' },
+    { l: 'M+', a: 'mp', c: 'mem', aria: 'Add to memory' },
+    { l: 'M−', a: 'mm', c: 'mem', aria: 'Subtract from memory' },
+    { l: 'Rnd', a: 'rnd', c: 'mem', aria: 'Random number' }
+  ];
+  const MAIN = [
+    { l: 'AC', a: 'ac', c: 'clr', aria: 'All clear' },
+    { l: '⌫', a: 'del', c: 'clr', aria: 'Backspace' },
+    { l: 'Ans', a: 'const', v: 'Ans', c: 'mem', aria: 'Previous answer' },
+    { l: '÷', a: 'op', v: '÷', c: 'op', aria: 'Divide' },
+
+    { l: '7', a: 'in', v: '7', c: 'num' }, { l: '8', a: 'in', v: '8', c: 'num' }, { l: '9', a: 'in', v: '9', c: 'num' },
+    { l: '×', a: 'op', v: '×', c: 'op', aria: 'Multiply' },
+
+    { l: '4', a: 'in', v: '4', c: 'num' }, { l: '5', a: 'in', v: '5', c: 'num' }, { l: '6', a: 'in', v: '6', c: 'num' },
+    { l: '−', a: 'op', v: '−', c: 'op', aria: 'Subtract' },
+
+    { l: '1', a: 'in', v: '1', c: 'num' }, { l: '2', a: 'in', v: '2', c: 'num' }, { l: '3', a: 'in', v: '3', c: 'num' },
+    { l: '+', a: 'op', v: '+', c: 'op', aria: 'Add' },
+
+    { l: '±', a: 'pm', c: 'num', aria: 'Change sign' },
+    { l: '0', a: 'in', v: '0', c: 'num' }, { l: '.', a: 'in', v: '.', c: 'num', aria: 'Decimal point' },
+    { l: '=', a: 'eq', c: 'eq', aria: 'Equals' }
+  ];
+
+  function buildKeys(list, parent) {
+    list.forEach(k => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'key k-' + k.c;
+      b.dataset.a = k.a;
+      if (k.v !== undefined) b.dataset.v = k.v;
+      if (k.av !== undefined) b.dataset.av = k.av;
+      if (k.id) b.id = k.id;
+      b.setAttribute('aria-label', k.aria || k.l);
+      const l1 = document.createElement('span');
+      l1.className = 'l1'; l1.textContent = k.l;
+      b.appendChild(l1);
+      if (k.l2) {
+        const l2 = document.createElement('span');
+        l2.className = 'l2'; l2.textContent = k.l2;
+        b.appendChild(l2);
+        b.classList.add('has-alt');
+      }
+      parent.appendChild(b);
+    });
+  }
+  buildKeys(SCI, $('#sci'));
+  buildKeys(MAIN, $('#mainpad'));
+
+  /* ================= Input logic ================= */
+  const isValueEnd = s => /(\d|\.|π|ℯ|\)|%|!|Ans)$/.test(s);
+  const TRAIL_OP = /(mod|[+−×÷^])+$/;
+
+  function reset() { expr = ''; prev = ''; done = false; err = false; errMsg = ''; fracHTML = ''; }
+  function setError(e) { err = true; errMsg = reason(e); expr = ''; prev = ''; done = false; fracHTML = ''; }
+  function start(isOp) {
+    fracHTML = '';
+    if (done) { if (!isOp) expr = ''; prev = ''; done = false; }
+  }
+  function currentValue() {
+    if (done && ans !== null) return ans;
+    if (!expr) return null;
+    return evaluate(expr);
+  }
+  function applyFn(v, autoMul) {
+    if (done) { expr = v + expr + ')'; prev = ''; done = false; fracHTML = ''; return; }   // wrap the last answer
+    start(false);
+    if (autoMul && isValueEnd(expr)) expr += '×';
+    expr += v;
+  }
 
   function handle(a, v) {
     if (err) {
+      const wasAC = a === 'ac';
       reset();
-      if (a === 'ac') return render();
+      if (wasAC) { render(); return; }
     }
 
     switch (a) {
@@ -557,45 +713,37 @@
           if (seg.includes('.')) break;
           if (!/\d$/.test(expr)) expr += '0';
           expr += '.';
-        } else {
-          expr += v;
-        }
+        } else expr += v;
         break;
       }
       case 'op': {
         start(true);
         if (!expr) { if (v === '−') expr = '−'; break; }
         if (expr === '−') break;
-        const last = expr.slice(-1);
-        if ('+−×÷^'.includes(last)) {
+        if (expr.endsWith('√') && !/\($/.test(expr)) { if (v === '−') expr += '−'; break; }
+        const tail = expr.match(TRAIL_OP);
+        if (tail) {
+          const last = expr.slice(-1);
           if (v === '−' && '×÷^'.includes(last)) expr += '−';
-          else expr = expr.replace(/[+−×÷^]+$/, '') + v;
-        } else if (last === '(') {
+          else expr = expr.replace(TRAIL_OP, '') + v;
+        } else if (expr.endsWith('(')) {
           if (v === '−') expr += '−';
-        } else {
-          expr += v;
-        }
+        } else expr += v;
         break;
       }
-      case 'pct':
+      case 'post':
         start(true);
-        if (VALUE_END.test(expr)) expr += '%';
+        if (isValueEnd(expr)) expr += v;
         break;
-      case 'sq':
-        start(true);
-        if (VALUE_END.test(expr)) expr += '^2';
-        break;
-      case 'pow':
-        start(true);
-        if (VALUE_END.test(expr)) expr += '^';
-        break;
-      case 'pi':
-        start(false);
-        expr += 'π';
-        break;
-      case 'fn':
+      case 'const':
         start(false);
         expr += v;
+        break;
+      case 'fn':
+        applyFn(v, /^\d/.test(v));
+        break;
+      case 'rootfn':
+        applyFn(v, true);
         break;
       case 'open':
         start(false);
@@ -605,124 +753,279 @@
         start(true);
         const opens = (expr.match(/\(/g) || []).length;
         const closes = (expr.match(/\)/g) || []).length;
-        if (closes < opens && VALUE_END.test(expr)) expr += ')';
+        if (closes < opens && isValueEnd(expr)) expr += ')';
+        break;
+      }
+      case 'pm': {
+        if (done) { ans = -ans; expr = fmt(ans); fracHTML = ''; break; }
+        if (!expr) { expr = '−'; break; }
+        const m = expr.match(/(\d[\d.]*(?:e[+-]?\d+)?|\.\d+|π|ℯ|Ans)$/);
+        if (!m) break;
+        const head = expr.slice(0, expr.length - m[0].length);
+        if (/(^|[(×÷^]|mod)−$/.test(head)) expr = head.slice(0, -1) + m[0];
+        else if (head.endsWith('−')) expr = head.slice(0, -1) + '+' + m[0];
+        else if (head.endsWith('+')) expr = head.slice(0, -1) + '−' + m[0];
+        else expr = head + '−' + m[0];
         break;
       }
       case 'del':
         fracHTML = ''; prev = ''; done = false;
-        expr = expr.replace(/(sin\(|cos\(|tan\(|√\(|.)$/u, '');
+        expr = expr.replace(/(sin⁻¹\(|cos⁻¹\(|tan⁻¹\(|sin\(|cos\(|tan\(|ln\(|log\(|abs\(|∛\(|√\(|mod|Ans|.)$/u, '');
         break;
       case 'ac':
         reset();
+        break;
+      case 'second':
+        second = !second;
+        break;
+      case 'angle':
+        mode = mode === 'DEG' ? 'RAD' : 'DEG';
+        toast(mode === 'DEG' ? 'Angles in degrees' : 'Angles in radians');
         break;
       case 'eq': {
         if (!expr || done) break;
         try {
           const val = evaluate(expr);
           const text = fmt(val);
+          pushHistory(expr, text);
           prev = expr + ' =';
           expr = text;
-          ans = parseFloat(text);
+          ans = round(val);
           done = true;
           fracHTML = '';
-        } catch (e) { setError(); }
+        } catch (e) { setError(e); }
         break;
       }
       case 'inv': {
-        if (!expr) break;
+        if (!expr && !done) break;
         try {
-          const val = evaluate(expr);
+          const val = currentValue();
           if (val === 0) throw new Error('divide by zero');
           const res = 1 / val;
-          prev = '1 ÷ (' + expr + ') =';
-          expr = fmt(res);
-          ans = parseFloat(expr);
-          done = true;
-          fracHTML = '';
-        } catch (e) { setError(); }
+          prev = '1 ÷ (' + (done ? fmt(ans) : expr) + ') =';
+          expr = fmt(res); ans = round(res); done = true; fracHTML = '';
+        } catch (e) { setError(e); }
         break;
       }
       case 'frac': {
         if (fracHTML) { fracHTML = ''; break; }
+        if (!expr && !done) break;
         let val;
-        if (done) {
-          val = ans;
-        } else {
-          if (!expr) break;
-          try {
-            val = evaluate(expr);
-            const text = fmt(val);
-            prev = expr + ' =';
-            expr = text;
-            val = parseFloat(text);
-            ans = val;
-            done = true;
-          } catch (e) { setError(); break; }
-        }
-        const f = toFraction(val);
-        if (!f) { prev = 'No simple fraction'; break; }
+        try { val = currentValue(); } catch (e) { setError(e); break; }
+        if (!done) { prev = expr + ' ='; expr = fmt(val); ans = round(val); done = true; }
+        const f = toFraction(round(val));
+        if (!f) { prev = 'No simple fraction for this number'; break; }
         if (f.d === 1) { prev = 'Already a whole number'; break; }
-        fracHTML = (f.neg ? '−' : '') +
-          '<span class="frac"><span class="n">' + f.n + '</span><span class="d">' + f.d + '</span></span>';
+        fracHTML = (f.neg ? '−' : '') + '<span class="frac"><span class="n">' + f.n + '</span><span class="d">' + f.d + '</span></span>';
+        prev = f.n > f.d
+          ? '= ' + (f.neg ? '−' : '') + Math.floor(f.n / f.d) + ' ' + (f.n % f.d) + '/' + f.d + '  (mixed number)'
+          : '= ' + expr;
+        break;
+      }
+      case 'mp': case 'mm': {
+        try {
+          const val = currentValue();
+          if (val === null) break;
+          memory = round(memory + (a === 'mp' ? val : -val));
+          store.set('sc-mem', memory);
+          toast('Memory: ' + fmt(memory));
+        } catch (e) { setError(e); }
+        break;
+      }
+      case 'mc':
+        memory = 0; store.set('sc-mem', 0); toast('Memory cleared');
+        break;
+      case 'mr': {
+        start(false);
+        if (isValueEnd(expr)) expr += '×';
+        const t = fmt(memory);
+        expr += memory < 0 ? '(' + t + ')' : t;
+        break;
+      }
+      case 'rnd': {
+        start(false);
+        if (isValueEnd(expr)) expr += '×';
+        expr += fmt(Math.random());
         break;
       }
     }
     render();
   }
 
+  /* ================= Rendering ================= */
+  function colorize(s) {
+    return s.replace(
+      /(sin⁻¹\(|cos⁻¹\(|tan⁻¹\(|sin\(|cos\(|tan\(|ln\(|log\(|abs\(|∛\(|√\(|√)|(\d+\.?\d*(?:e[+-]?\d+)?|\.\d+)|(\+|−|×|÷|\^|mod)|(π|ℯ|Ans)|([()])|(%|!)/g,
+      (m, f, n, o, c, p, x) =>
+        f ? '<span class="t-fn">' + m + '</span>' :
+        n ? '<span class="t-num">' + m + '</span>' :
+        o ? '<span class="t-op">' + m + '</span>' :
+        c ? '<span class="t-const">' + m + '</span>' :
+        p ? '<span class="t-par">' + m + '</span>' :
+            '<span class="t-op">' + m + '</span>'
+    );
+  }
+
+  function fit() {
+    mainEl.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(mainEl).fontSize);
+    while (mainEl.scrollWidth > mainEl.clientWidth + 1 && size > 20) {
+      size -= 2;
+      mainEl.style.fontSize = size + 'px';
+    }
+    mainEl.scrollLeft = mainEl.scrollWidth;
+  }
+
   function render() {
-    const text = err ? 'Error' : (expr || '0');
-    if (fracHTML && !err) mainEl.innerHTML = fracHTML;
-    else mainEl.textContent = text;
+    if (err) mainEl.innerHTML = '<span class="t-err">Error</span>';
+    else if (fracHTML) mainEl.innerHTML = '<span class="t-num">' + fracHTML + '</span>';
+    else if (!expr) mainEl.innerHTML = '<span class="t-num">0</span><span class="caret"></span>';
+    else mainEl.innerHTML = colorize(expr) + (done ? '' : '<span class="caret"></span>');
 
-    mainEl.classList.toggle('error', err);
-    const len = text.length;
-    mainEl.classList.toggle('s1', len > 11 && len <= 16);
-    mainEl.classList.toggle('s2', len > 16);
-
-    // Small line: previous expression, or a live preview while typing
-    let top = prev;
+    let top = err ? errMsg : prev;
     if (!top && !done && !err && expr && !fracHTML) {
       try {
         const f = fmt(evaluate(expr));
         if (f !== expr) top = '= ' + f;
-      } catch (e) { /* incomplete expression: show nothing */ }
+      } catch (e) { /* unfinished expression: no preview */ }
     }
     prevEl.textContent = top;
+
+    chipAngle.textContent = mode;
+    chip2nd.hidden = !second;
+    chipMem.hidden = memory === 0;
+    pad.classList.toggle('second', second);
+    $('#k-second').classList.toggle('on', second);
+    $('#k-angle').classList.toggle('on', mode === 'RAD');
+    $('#k-angle .l1').textContent = mode;
+    fit();
   }
 
-  /* ---------------- Events ---------------- */
+  /* ================= History ================= */
+  function pushHistory(e, r) {
+    history.unshift({ e, r });
+    history = history.slice(0, 60);
+    store.set('sc-history', history);
+    renderHistory();
+  }
+  function renderHistory() {
+    hList.innerHTML = '';
+    if (!history.length) {
+      const d = document.createElement('div');
+      d.className = 'h-empty';
+      d.textContent = 'Your calculations will appear here.';
+      hList.appendChild(d);
+      return;
+    }
+    history.forEach(h => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'h-item';
+      const e = document.createElement('span'); e.className = 'h-e'; e.textContent = h.e;
+      const r = document.createElement('span'); r.className = 'h-r'; r.textContent = '= ' + h.r;
+      b.append(e, r);
+      b.addEventListener('click', () => {
+        reset();
+        expr = h.r; ans = toNum(h.r); done = true; prev = h.e + ' =';
+        closeHistory();
+        render();
+      });
+      hList.appendChild(b);
+    });
+  }
+  const openHistory = () => { historyEl.classList.add('open'); scrim.classList.add('show'); };
+  const closeHistory = () => { historyEl.classList.remove('open'); scrim.classList.remove('show'); };
+  $('#btnHist').addEventListener('click', openHistory);
+  $('#btnCloseHist').addEventListener('click', closeHistory);
+  scrim.addEventListener('click', closeHistory);
+  $('#btnClearHist').addEventListener('click', () => { history = []; store.set('sc-history', history); renderHistory(); });
 
-  document.getElementById('keys').addEventListener('click', e => {
-    const b = e.target.closest('button');
+  /* ================= Toast, copy, theme ================= */
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1400);
+  }
+
+  $('#btnCopy').addEventListener('click', () => {
+    let text = '';
+    try {
+      if (done) text = expr;
+      else if (expr) text = fmt(evaluate(expr));
+    } catch (e) { text = ''; }
+    if (!text) { toast('Nothing to copy'); return; }
+    text = text.replace('−', '-');
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('Copied ' + text); } catch (e) { toast("Couldn't copy"); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => toast('Copied ' + text), fallback);
+    } else fallback();
+  });
+
+  $('#btnTheme').addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    store.set('sc-theme', next);
+  });
+
+  /* ================= Events ================= */
+  pad.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.key');
     if (!b) return;
-    handle(b.dataset.a, b.dataset.v);
+    const r = b.getBoundingClientRect();
+    const d = Math.max(r.width, r.height);
+    const s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - r.left - d / 2) + 'px';
+    s.style.top = (e.clientY - r.top - d / 2) + 'px';
+    b.appendChild(s);
+    s.addEventListener('animationend', () => s.remove());
+    try { if (navigator.vibrate) navigator.vibrate(6); } catch (_) {}
+  });
+
+  pad.addEventListener('click', e => {
+    const b = e.target.closest('.key');
+    if (!b) return;
+    let v = b.dataset.v;
+    if (second && b.dataset.av !== undefined) { v = b.dataset.av; second = false; }
+    handle(b.dataset.a, v);
   });
 
   const KEYMAP = {
     '0': ['in', '0'], '1': ['in', '1'], '2': ['in', '2'], '3': ['in', '3'], '4': ['in', '4'],
     '5': ['in', '5'], '6': ['in', '6'], '7': ['in', '7'], '8': ['in', '8'], '9': ['in', '9'],
     '.': ['in', '.'], ',': ['in', '.'],
-    '+': ['op', '+'], '-': ['op', '−'], '*': ['op', '×'], 'x': ['op', '×'], '/': ['op', '÷'],
-    '^': ['pow'], '%': ['pct'], '(': ['open'], ')': ['close'], 'p': ['pi'],
+    '+': ['op', '+'], '-': ['op', '−'], '*': ['op', '×'], 'x': ['op', '×'], '/': ['op', '÷'], 'm': ['op', 'mod'],
+    '^': ['post', '^'], '%': ['post', '%'], '!': ['post', '!'],
+    '(': ['open'], ')': ['close'],
+    'p': ['const', 'π'], 'e': ['const', 'ℯ'], 'a': ['const', 'Ans'],
+    's': ['fn', 'sin('], 'c': ['fn', 'cos('], 't': ['fn', 'tan('], 'l': ['fn', 'ln('], 'r': ['rootfn', '√('],
     'Enter': ['eq'], '=': ['eq'], 'Backspace': ['del'], 'Escape': ['ac'], 'Delete': ['ac']
   };
 
   document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape' && historyEl.classList.contains('open')) { closeHistory(); return; }
     const m = KEYMAP[e.key];
     if (!m) return;
     e.preventDefault();
     const [a, v] = m;
     handle(a, v);
-    const sel = v !== undefined ? `[data-a="${a}"][data-v="${v}"]` : `[data-a="${a}"]`;
-    const btn = document.querySelector(sel);
-    if (btn) {
-      btn.classList.add('pressed');
-      setTimeout(() => btn.classList.remove('pressed'), 110);
-    }
+    const sel = v !== undefined ? '[data-a="' + a + '"][data-v="' + v + '"]' : '[data-a="' + a + '"]';
+    const btn = pad.querySelector(sel);
+    if (btn) { btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 110); }
   });
 
+  window.addEventListener('resize', fit);
+
+  renderHistory();
   render();
 })();
 </script>
